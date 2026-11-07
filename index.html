@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101112">
+<title>Пиксельный клуб — Змейка, Сапёр, Судоку и 2048</title>
+<meta name="description" content="Четыре игры в браузере: Змейка, Сапёр, Судоку и 2048. Играй на компьютере и телефоне.">
+<style>
+:root{color-scheme:dark;--bg:#101112;--panel:#17191a;--raised:#1e2021;--line:#2d3030;--text:#f0f2ed;--muted:#a0a59d;--green:#c0ff70;--purple:#c3a5ff;--accent:var(--green);font:15px/1.5 system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}body[data-game="mine"]{--accent:var(--purple)}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible,canvas:focus-visible{outline:2px solid var(--accent);outline-offset:3px}[hidden]{display:none!important}
+svg{width:20px;height:20px;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.wrap{width:min(1104px,calc(100% - 48px));margin:auto}.top{border-bottom:1px solid var(--line)}.top .wrap{min-height:68px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:800;letter-spacing:-.02em}.brand-icon{display:grid;place-items:center;background:var(--green);color:#14200c;width:34px;height:34px;border-radius:8px}.brand-icon svg{width:21px;height:21px}.status{display:flex;align-items:center;gap:8px;color:#b3b8ae}.status:before{content:"";width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #c0ff7050}.mono,.status{font:600 11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
+main.wrap{padding:37px 0 24px}.eyebrow{color:var(--green);display:flex;align-items:center;gap:9px}.eyebrow:before{content:"";width:16px;height:1px;background:currentColor}h1{font-size:clamp(40px,6vw,68px);line-height:1.02;letter-spacing:-.075em;margin:10px 0 8px}h1 span{color:var(--green)}.intro p{margin:0;color:var(--muted);font-size:15px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:23px 0 15px}
+.choice{--tone:var(--green);display:flex;align-items:center;gap:13px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);text-align:left;min-width:0}.choice.mine{--tone:var(--purple)}.choice:hover{background:var(--raised)}.choice[aria-pressed="true"]{border-color:color-mix(in srgb,var(--tone) 60%,#333);background:color-mix(in srgb,var(--tone) 8%,var(--panel))}.tile-icon{width:41px;height:41px;display:grid;place-items:center;border-radius:8px;background:color-mix(in srgb,var(--tone) 12%,#1b1c1c);color:var(--tone);flex:none}.choice strong{display:block;font-size:15px}.choice small{display:block;color:var(--muted);font-size:12px}.choice .index{margin-left:auto;color:var(--tone);opacity:.65}
+.layout{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(245px,1fr);gap:14px;align-items:start}.game,.side-card{border:1px solid var(--line);border-radius:13px;background:var(--panel)}.game{min-width:0;padding:13px}.game-head{display:flex;justify-content:space-between;align-items:center;padding:1px 3px 11px;gap:8px}.game-name{display:flex;align-items:center;gap:9px;font-weight:750}.game-name svg{color:var(--accent);width:17px;height:17px}.icon-btn{border:1px solid var(--line);background:var(--raised);color:var(--text);border-radius:7px;width:34px;height:32px;display:grid;place-items:center}.icon-btn svg{width:16px;height:16px}.icon-btn:hover,.secondary:hover{border-color:var(--accent)}.actions{display:flex;gap:7px;align-items:center}
+.arena{position:relative;background:#101311;border:1px solid #303633;border-radius:9px;overflow:hidden;display:grid;place-items:center}.snake-arena{aspect-ratio:20/12;touch-action:none}.snake-arena canvas{width:100%;height:100%;display:block;touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:10px;background:#0c100cb8}.overlay-inner{display:grid;justify-items:center;gap:7px}.hero-icon{display:grid;place-items:center;width:46px;height:46px;border:1px solid #4c6637;background:#26351c;border-radius:10px;color:var(--green);margin-bottom:2px}.hero-icon svg{width:25px;height:25px}.overlay h2{font-size:clamp(22px,4vw,32px);line-height:1.1;letter-spacing:-.055em;margin:0}.overlay p{font-size:13px;color:#b7c0b0;margin:0}.primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#171d12;border:0;border-radius:8px;font-weight:800;padding:9px 17px;margin-top:5px}.primary:hover{filter:brightness(1.1)}.primary svg{width:16px;height:16px}
+.footline{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:12px;padding:10px 3px 0}.footline span:first-child{color:var(--accent)}aside{display:grid;gap:12px}.side-card{padding:15px}.side-card h2{font-size:12px;letter-spacing:.095em;text-transform:uppercase;margin:0 0 12px;color:#c4c8bf;display:flex;align-items:center;gap:8px}.side-card h2 svg{width:16px;height:16px;color:var(--accent)}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{padding:9px 10px;background:var(--raised);border:1px solid var(--line);border-radius:8px}.stat span{display:block;color:var(--muted);font-size:11px}.stat strong{display:block;font:700 27px/1.35 ui-monospace,monospace;letter-spacing:-.06em;color:var(--accent)}.rule{min-height:32px;display:flex;gap:8px;align-items:center;justify-content:space-between;color:#c4c8bf;font-size:12px}.rule+.rule{border-top:1px solid var(--line)}.keys{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:end}kbd{display:inline-grid;place-items:center;min-width:22px;padding:2px 5px;background:#242728;border:1px solid #393e3a;border-radius:4px;color:#e0e5db;font:11px/1.4 ui-monospace,monospace}.tip{font-size:12px;color:var(--muted);margin:10px 0 0}.dpad{display:none;justify-content:center;gap:6px;margin-top:10px}.dpad button{width:47px;height:42px;color:var(--accent);touch-action:manipulation}
+select,.secondary{background:var(--raised);border:1px solid var(--line);border-radius:7px;color:var(--text);padding:5px 8px;font-size:12px}.secondary[aria-pressed="true"]{background:var(--purple);color:#1e142c}.mine-arena{background:#111016;min-height:240px;padding:12px}.mine-grid{width:min(100%,var(--grid-width));display:grid;grid-template-columns:repeat(var(--size),minmax(0,1fr));gap:3px;touch-action:manipulation}.cell{min-width:0;aspect-ratio:1;display:grid;place-items:center;padding:0;border:1px solid #474052;border-radius:4px;background:#302839;color:#f1eafa;font:800 clamp(9px,2.4vw,16px)/1 ui-monospace,monospace;user-select:none}.cell:hover{border-color:var(--purple)}.cell.open{background:#1c1822;border-color:#2a2331}.cell.flag{color:#f7c47f}.cell.bomb{background:#542c43;color:#ffd2e0}.cell svg{width:60%;height:60%}.mine-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 2px 0;color:var(--muted);font-size:12px}.mine-bar .secondary{white-space:nowrap}.footer{border-top:1px solid var(--line);margin-top:21px;padding:13px 0 0;color:#878d85;display:flex;justify-content:space-between;gap:12px}
+@media(pointer:coarse){.dpad{display:flex}}@media(max-width:740px){.wrap{width:calc(100% - 28px)}main.wrap{padding-top:25px}.layout{grid-template-columns:1fr}.choices{margin-top:18px}.side-card{padding:12px}aside{grid-template-columns:1fr 1fr;gap:8px}.dpad{display:flex}}@media(max-width:460px){.choice{padding:8px;gap:7px}.choice small{display:none}.choice .index{display:none}.tile-icon{width:32px;height:32px}.game{padding:9px}.snake-arena{aspect-ratio:1.52}.game-head{padding-bottom:8px}aside{grid-template-columns:1fr}.top .wrap{min-height:54px}.footer .mono{font-size:9px}}
+
+:root{--cyan:#85eadf;--amber:#ffc486}
+body[data-game="sudoku"]{--accent:var(--cyan)}
+body[data-game="merge"]{--accent:var(--amber)}
+.choices{grid-template-columns:repeat(4,minmax(0,1fr))}
+.choice.sudoku{--tone:var(--cyan)}
+.choice.merge{--tone:var(--amber)}
+.puzzle-arena{padding:clamp(8px,2vw,16px);background:color-mix(in srgb,var(--accent) 4%,#101112)}
+.sudoku-grid{width:min(100%,396px);aspect-ratio:1;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));grid-template-rows:repeat(9,minmax(0,1fr));gap:1px;padding:2px;background:#58736e;border-radius:6px}
+.sudoku-cell{min-width:0;border:0;border-radius:0;background:#192626;color:var(--cyan);padding:0;font:700 clamp(14px,3vw,21px)/1 ui-monospace,monospace;touch-action:manipulation}
+.sudoku-cell:nth-child(9n+3),.sudoku-cell:nth-child(9n+6){margin-right:2px}
+.sudoku-cell:nth-child(n+19):nth-child(-n+27),.sudoku-cell:nth-child(n+46):nth-child(-n+54){margin-bottom:2px}
+.sudoku-cell.given{background:#263333;color:#f0f5f1}
+.sudoku-cell.related{background:#29403d}
+.sudoku-cell.matching{background:#345551}
+.sudoku-cell.conflict{background:#503137;color:#ffb4b9}
+.sudoku-cell.selected{box-shadow:inset 0 0 0 2px var(--cyan)}
+.sudoku-cell:focus-visible{outline-offset:-3px;outline-color:white}
+.sudoku-keys{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;width:min(100%,396px);margin:10px auto 0}
+.sudoku-keys button{min-height:35px;padding:3px;font-weight:750;touch-action:manipulation}
+.merge-arena{touch-action:none}
+.merge-grid{width:min(100%,396px);aspect-ratio:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:7px;padding:7px;background:#43362c;border-radius:9px}
+.merge-cell{display:grid;place-items:center;border-radius:6px;background:#302822;color:#281a10;font:800 clamp(17px,4.5vw,36px)/1 ui-monospace,monospace;letter-spacing:-.07em;user-select:none}
+.merge-cell[data-value="2"]{background:#f6e4cf}.merge-cell[data-value="4"]{background:#f5d0a3}
+.merge-cell[data-value="8"]{background:#f7b174}.merge-cell[data-value="16"]{background:#f8975f}
+.merge-cell[data-value="32"]{background:#fb805a}.merge-cell[data-value="64"]{background:#f66b57}
+.merge-cell.high{background:#ffd375;font-size:clamp(13px,4vw,29px)}
+.merge-cell[data-value="2048"]{background:#c0ff70}
+.merge-cell.new{box-shadow:inset 0 0 0 2px #fff7e487}
+@media(max-width:880px){.choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:no-preference){.merge-cell.new{animation:tile-in .15s ease-out}@keyframes tile-in{from{transform:scale(.87);opacity:.6}to{transform:scale(1);opacity:1}}}
+</style>
+</head>
+<body data-game="snake">
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg">
+<symbol id="arc" viewBox="0 0 24 24"><path d="M7 5h10a4 4 0 0 1 4 4l1 7a2 2 0 0 1-3.4 1.8L15 15H9l-3.6 2.8A2 2 0 0 1 2 16l1-7a4 4 0 0 1 4-4Z"/><path d="M6 10h5m-2.5-2.5v5m7.5-2.5h.01m2.5 2h.01" stroke-width="2"/></symbol>
+<symbol id="snake" viewBox="0 0 24 24"><path d="M4 19h12a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h4"/><rect x="12" y="4" width="8" height="6" rx="2"/><path d="M17 7h.01M20 7h2" stroke-width="2"/></symbol>
+<symbol id="mine" viewBox="0 0 24 24"><circle cx="12" cy="13" r="5"/><path d="M12 8V5m0 16v-3m5-5h3M4 13h3m8.5-3.5L18 7m-12 0 2.5 2.5m7 7L18 19m-9.5-2.5L6 19"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7Z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14m6-14v14" stroke-width="2.6"/></symbol>
+<symbol id="reset-glyph" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 2 6M4 5v6h6"/></symbol>
+<symbol id="chart" viewBox="0 0 24 24"><path d="M4 20h16M7 16v-4m5 4V8m5 8V4"/></symbol>
+<symbol id="keys" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01m3.3 0h.01m3.3 0h.01m3.3 0h.01M8 14h8"/></symbol>
+<symbol id="flag" viewBox="0 0 24 24"><path d="M6 21V4m0 1c4-4 8 3 13 0v10c-5 3-9-4-13 0" fill="currentColor"/></symbol>
+
+<symbol id="sudoku" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></symbol>
+<symbol id="merge" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/><path d="M15 5h5v5m-7 1 7-6M9 19H4v-5m7-1-7 6"/></symbol>
+</svg>
+<header class="top"><div class="wrap"><div class="brand"><span class="brand-icon"><svg aria-hidden="true"><use href="#arc"/></svg></span>Пиксельный клуб</div><div class="status">Аркада</div></div></header>
+<main class="wrap">
+  <section class="intro"><div class="eyebrow mono">Игровая комната</div><h1>Пиксельный клуб<span>.</span></h1><p>Четыре классические игры. Выбирай и начинай.</p></section>
+  <div class="choices" aria-label="Выбор игры">
+    <button class="choice" data-game="snake" aria-pressed="true"><span class="tile-icon"><svg aria-hidden="true"><use href="#snake"/></svg></span><span><strong>Змейка</strong><small>Собирай яблоки и расти</small></span><span class="mono index">01</span></button>
+    <button class="choice mine" data-game="mine" aria-pressed="false"><span class="tile-icon"><svg aria-hidden="true"><use href="#mine"/></svg></span><span><strong>Сапёр</strong><small>Открывай клетки и обходи мины</small></span><span class="mono index">02</span></button>
+    <button class="choice sudoku" data-game="sudoku" aria-pressed="false"><span class="tile-icon"><svg aria-hidden="true"><use href="#sudoku"/></svg></span><span><strong>Судоку</strong><small>Заполняй клетки цифрами</small></span><span class="mono index">03</span></button>
+    <button class="choice merge" data-game="merge" aria-pressed="false"><span class="tile-icon"><svg aria-hidden="true"><use href="#merge"/></svg></span><span><strong>2048</strong><small>Соединяй одинаковые плитки</small></span><span class="mono index">04</span></button>
+  </div>
+  <div class="layout">
+    <section class="game" aria-label="Игровое поле">
+      <div class="game-head"><div class="game-name"><svg aria-hidden="true"><use id="game-icon" href="#snake"/></svg><span id="game-name">Змейка</span></div><div class="actions">
+        <select id="difficulty" aria-label="Сложность Сапёра" hidden><option value="easy">Лёгкий</option><option value="medium">Средний</option><option value="hard">Сложный</option></select>
+        <button id="pause-button" class="icon-btn" type="button" aria-label="Пауза" title="Пауза"><svg aria-hidden="true"><use id="pause-icon" href="#pause"/></svg></button>
+        <button id="reset" class="icon-btn" type="button" aria-label="Новая игра" title="Новая игра"><svg aria-hidden="true"><use href="#reset-glyph"/></svg></button>
+      </div></div>
+      <div id="snake-panel">
+        <div class="arena snake-arena">
+          <canvas id="snake-board" width="720" height="432" tabindex="-1" aria-label="Поле Змейки"></canvas>
+          <div id="overlay" class="overlay"><div class="overlay-inner"><span class="hero-icon"><svg aria-hidden="true"><use href="#snake"/></svg></span><h2 id="snake-title">Готов к игре?</h2><p id="snake-message">Собирай яблоки и не врезайся.</p><button id="start" class="primary"><svg aria-hidden="true"><use href="#play"/></svg><span id="start-label">Играть</span></button></div></div>
+        </div>
+        <div class="dpad" aria-label="Кнопки управления"><button class="icon-btn" data-direction="left" aria-label="Влево">←</button><button class="icon-btn" data-direction="up" aria-label="Вверх">↑</button><button class="icon-btn" data-direction="down" aria-label="Вниз">↓</button><button class="icon-btn" data-direction="right" aria-label="Вправо">→</button></div>
+        <div class="footline"><span class="mono" id="snake-status" role="status">Ожидание</span><span>20 × 12</span></div>
+      </div>
+      <div id="mine-panel" hidden>
+        <div class="arena mine-arena"><div class="mine-grid" id="mine-board" aria-label="Поле Сапёра"></div></div>
+        <div class="mine-bar"><span id="mine-status" role="status">Открой любую клетку</span><button class="secondary" id="flag-mode" aria-pressed="false"><svg aria-hidden="true" style="width:13px;height:13px"><use href="#flag"/></svg> Флажок</button></div>
+      </div>
+      <div id="sudoku-panel" hidden>
+        <div class="arena puzzle-arena"><div class="sudoku-grid" id="sudoku-board" role="group" aria-label="Поле Судоку, 9 на 9"></div></div>
+        <div class="sudoku-keys" id="sudoku-keys" role="group" aria-label="Ввод цифр"></div>
+        <div class="footline"><span id="sudoku-status" role="status"></span><span>9 × 9</span></div>
+      </div>
+      <div id="merge-panel" hidden>
+        <div class="arena puzzle-arena merge-arena" id="merge-arena"><div class="merge-grid" id="merge-board" role="group" aria-label="Поле 2048, 4 на 4"></div></div>
+        <div class="dpad" role="group" aria-label="Кнопки управления 2048"><button class="icon-btn" data-merge-direction="left" aria-label="Влево">←</button><button class="icon-btn" data-merge-direction="up" aria-label="Вверх">↑</button><button class="icon-btn" data-merge-direction="down" aria-label="Вниз">↓</button><button class="icon-btn" data-merge-direction="right" aria-label="Вправо">→</button></div>
+        <div class="footline"><span id="merge-status" role="status"></span><span>4 × 4</span></div>
+      </div>
+    </section>
+    <aside>
+      <section class="side-card"><h2><svg aria-hidden="true"><use href="#chart"/></svg> Статистика</h2><div class="stats"><div class="stat"><span id="stat-label-a">Счёт</span><strong id="stat-a">00</strong></div><div class="stat"><span id="stat-label-b">Рекорд</span><strong id="stat-b">00</strong></div></div></section>
+      <section class="side-card"><h2><svg aria-hidden="true"><use href="#keys"/></svg> Управление</h2>
+        <div id="snake-help"><div class="rule"><span>Движение</span><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div><div class="rule"><span>Пауза / старт</span><span class="keys"><kbd>Пробел</kbd></span></div><p class="tip">На телефоне используй свайпы или кнопки под полем.</p></div>
+        <div id="mine-help" hidden><div class="rule"><span>Открыть клетку</span><span class="keys"><kbd>Клик</kbd></span></div><div class="rule"><span>Поставить флажок</span><span class="keys"><kbd>Правый клик</kbd><kbd>F</kbd></span></div><p class="tip">Число показывает, сколько мин рядом. На телефоне включи режим «Флажок».</p></div>
+        <div id="sudoku-help" hidden><div class="rule"><span>Ввести цифру</span><span class="keys"><kbd>1–9</kbd></span></div><div class="rule"><span>Стереть цифру</span><span class="keys"><kbd>⌫</kbd></span></div><p class="tip">В каждой строке, столбце и квадрате 3 × 3 цифры от 1 до 9 встречаются по одному разу. На телефоне используй кнопки под полем.</p></div>
+        <div id="merge-help" hidden><div class="rule"><span>Сдвинуть плитки</span><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div><p class="tip">Две одинаковые плитки сливаются в одну. Собери 2048. На телефоне используй свайпы или кнопки под полем.</p></div>
+      </section>
+    </aside>
+  </div>
+  <footer class="footer"><span class="mono">Пиксельный клуб</span><span class="mono">04 игры / 01 экран</span></footer>
+</main>
+<script>
+const byId = id => document.getElementById(id);
+const pad = number => String(number).padStart(2, "0");
+let activeGame = "snake";
+const canvas = byId("snake-board");
+const context = canvas.getContext("2d");
+const columns = 20;
+const rows = 12;
+const unit = 36;
+const directions = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
+const keyDirections = {ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right", KeyW:"up", KeyS:"down", KeyA:"left", KeyD:"right"};
+let snake, food, direction, pendingDirection, snakeState, snakeTimer, score;
+let best = 0;
+try { best = Number(localStorage.getItem("pixel-club-snake-best")) || 0; } catch {}
+function updateStats() {
+  let stats;
+  switch (activeGame) {
+    case "mine":
+      stats = ["Осталось мин", mineTotal - flags, "Время, с", mineSeconds];
+      break;
+    case "sudoku":
+      stats = ["Заполнено", sudokuValues.filter(Boolean).length, "Пустых", sudokuValues.filter(value => !value).length];
+      break;
+    case "merge":
+      stats = ["Счёт", mergeScore, "Рекорд", mergeBest];
+      break;
+    default:
+      stats = ["Счёт", score, "Рекорд", best];
+  }
+  const [labelA,valueA,labelB,valueB] = stats;
+  byId("stat-label-a").textContent = labelA;
+  byId("stat-label-b").textContent = labelB;
+  byId("stat-a").textContent = pad(valueA);
+  byId("stat-b").textContent = pad(valueB);
+}
+function roundedCell(x, y, color, inset = 2) {
+  context.beginPath();
+  context.roundRect(x * unit + inset, y * unit + inset, unit - inset * 2, unit - inset * 2, 6);
+  context.fillStyle = color;
+  context.fill();
+}
+function drawSnake() {
+  context.fillStyle = "#111713";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = "#253027";
+  context.lineWidth = 1;
+  context.beginPath();
+  for (let x = 1; x < columns; x++) { context.moveTo(x * unit + .5, 0); context.lineTo(x * unit + .5, canvas.height); }
+  for (let y = 1; y < rows; y++) { context.moveTo(0, y * unit + .5); context.lineTo(canvas.width, y * unit + .5); }
+  context.stroke();
+  if (food) {
+    const x = food[0] * unit + unit / 2;
+    const y = food[1] * unit + unit / 2;
+    context.fillStyle = "#ff836e";
+    context.beginPath();
+    context.arc(x, y + 2, 10, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#a5da68";
+    context.fillRect(x, y - 13, 4, 7);
+  }
+  snake.forEach(([x,y], index) => roundedCell(x, y, index === 0 ? "#c0ff70" : "#78b744"));
+  const [x,y] = snake[0];
+  const eyeOffsets = {right:[[25,11],[25,25]],left:[[11,11],[11,25]],up:[[11,11],[25,11]],down:[[11,25],[25,25]]};
+  context.fillStyle = "#263622";
+  for (const [ex,ey] of eyeOffsets[direction]) context.fillRect(x * unit + ex - 2, y * unit + ey - 2, 4, 4);
+}
+const snakeCopy = {
+  ready:["Готов к игре?","Собирай яблоки и не врезайся.","Играть","Ожидание"],
+  playing:["","","","В игре"],
+  paused:["Пауза","Змейка ждёт тебя.","Продолжить","Пауза"],
+  lost:["Игра окончена","","Играть снова","Игра окончена"],
+  won:["Поле заполнено!","","Играть снова","Победа"]
+};
+function setSnakeState(state) {
+  clearTimeout(snakeTimer);
+  snakeState = state;
+  const [title,message,label,status] = snakeCopy[state];
+  byId("overlay").hidden = state === "playing";
+  byId("snake-title").textContent = title;
+  byId("snake-message").textContent = message || "Твой счёт — " + score + ".";
+  byId("start-label").textContent = label;
+  byId("snake-status").textContent = status;
+  const pause = byId("pause-button");
+  pause.setAttribute("aria-label", state === "playing" ? "Пауза" : state === "paused" ? "Продолжить" : "Играть");
+  pause.title = pause.getAttribute("aria-label");
+  byId("pause-icon").setAttribute("href", state === "playing" ? "#pause" : "#play");
+  if (state === "playing") scheduleSnake();
+}
+function resetSnake() {
+  snake = [[6,6],[5,6],[4,6],[3,6]];
+  food = [13,5];
+  direction = "right";
+  pendingDirection = null;
+  score = 0;
+  setSnakeState("ready");
+  drawSnake();
+  updateStats();
+}
+function scheduleSnake() {
+  snakeTimer = setTimeout(stepSnake, Math.max(72, 185 - score * 5));
+}
+function stepSnake() {
+  direction = pendingDirection || direction;
+  pendingDirection = null;
+  const [dx,dy] = directions[direction];
+  const x = snake[0][0] + dx;
+  const y = snake[0][1] + dy;
+  const eats = food && x === food[0] && y === food[1];
+  const body = eats ? snake : snake.slice(0,-1);
+  if (x < 0 || y < 0 || x >= columns || y >= rows || body.some(([sx,sy]) => sx === x && sy === y)) {
+    setSnakeState("lost");
+    return;
+  }
+  snake.unshift([x,y]);
+  if (eats) {
+    score++;
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem("pixel-club-snake-best", String(best)); } catch {}
+    }
+    const empty = [];
+    for (let ey = 0; ey < rows; ey++) {
+      for (let ex = 0; ex < columns; ex++) {
+        if (!snake.some(([sx,sy]) => sx === ex && sy === ey)) empty.push([ex,ey]);
+      }
+    }
+    food = empty[Math.floor(Math.random() * empty.length)];
+    updateStats();
+  } else {
+    snake.pop();
+  }
+  drawSnake();
+  if (food) scheduleSnake();
+  else setSnakeState("won");
+}
+function toggleSnake() {
+  if (snakeState === "playing") { setSnakeState("paused"); return; }
+  if (snakeState === "lost" || snakeState === "won") resetSnake();
+  setSnakeState("playing");
+}
+function steer(next) {
+  if (snakeState === "ready") setSnakeState("playing");
+  if (snakeState !== "playing" || pendingDirection) return;
+  const [dx,dy] = directions[direction];
+  const [nx,ny] = directions[next];
+  if (dx * nx + dy * ny === 0) pendingDirection = next;
+}
+function listenForSwipes(arena, onSwipe) {
+  let touch;
+  arena.addEventListener("pointerdown", event => {
+    if (event.pointerType !== "touch" || touch || event.target.closest("button")) return;
+    touch = {id:event.pointerId,x:event.clientX,y:event.clientY};
+    arena.setPointerCapture(event.pointerId);
+  });
+  arena.addEventListener("pointerup", event => {
+    if (touch?.id !== event.pointerId) return;
+    const dx = event.clientX - touch.x;
+    const dy = event.clientY - touch.y;
+    touch = null;
+    if (Math.max(Math.abs(dx),Math.abs(dy)) < 16) return;
+    onSwipe(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+  });
+  arena.addEventListener("lostpointercapture", event => {
+    if (touch?.id === event.pointerId) touch = null;
+  });
+}
+listenForSwipes(document.querySelector(".snake-arena"), steer);
+document.querySelectorAll("[data-direction]").forEach(button => button.addEventListener("click", () => steer(button.dataset.direction)));
+byId("start").addEventListener("click", () => {
+  toggleSnake();
+  canvas.focus({preventScroll:true});
+});
+byId("pause-button").addEventListener("click", toggleSnake);
+
+const levels = {easy:[9,10], medium:[12,22], hard:[16,45]};
+const board = byId("mine-board");
+const mineIcon = '<svg aria-hidden="true"><use href="#mine"/></svg>';
+const flagIcon = '<svg aria-hidden="true"><use href="#flag"/></svg>';
+const numberColors = ["","#9ab8ff","#b6ef90","#ff9f96","#c4a6ff","#ffca86","#85e3d8","#ffc3ed","#dfdce5"];
+let mineSize, mineTotal, mineCells, mineButtons, mineState, flags, opened, mineSeconds, mineTimer, mineStarted, flagMode;
+function neighbors(index) {
+  const x = index % mineSize;
+  const y = Math.floor(index / mineSize);
+  const result = [];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if ((dx || dy) && x + dx >= 0 && x + dx < mineSize && y + dy >= 0 && y + dy < mineSize) {
+        result.push((y + dy) * mineSize + x + dx);
+      }
+    }
+  }
+  return result;
+}
+function resetMines() {
+  clearInterval(mineTimer);
+  [mineSize,mineTotal] = levels[byId("difficulty").value];
+  mineState = "ready";
+  flags = opened = mineSeconds = 0;
+  flagMode = false;
+  byId("flag-mode").setAttribute("aria-pressed","false");
+  byId("mine-status").textContent = "Открой любую клетку";
+  board.style.setProperty("--size",mineSize);
+  board.style.setProperty("--grid-width", Math.min(480, mineSize * 36) + "px");
+  mineCells = Array.from({length:mineSize ** 2}, () => ({mine:false,open:false,flag:false,count:0}));
+  mineButtons = mineCells.map((_, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.index = index;
+    return button;
+  });
+  board.replaceChildren(...mineButtons);
+  mineCells.forEach((_, index) => paintMineCell(index));
+  updateStats();
+}
+function paintMineCell(index) {
+  const cell = mineCells[index];
+  const button = mineButtons[index];
+  const showMine = mineState === "lost" && cell.mine;
+  button.className = "cell" + (cell.open ? " open" : "") + (cell.flag ? " flag" : "") + (showMine ? " bomb" : "");
+  button.style.color = cell.open && !cell.mine ? numberColors[cell.count] : "";
+  button.innerHTML = showMine ? mineIcon : cell.flag ? flagIcon : cell.open && cell.count ? String(cell.count) : "";
+  const state = showMine ? "мина" : cell.flag ? "флажок" : cell.open ? (cell.count ? "мин рядом — " + cell.count : "пусто") : "закрыта";
+  button.setAttribute("aria-label", "Строка " + (Math.floor(index / mineSize) + 1) + ", столбец " + (index % mineSize + 1) + ", " + state);
+}
+function startMines(first) {
+  const safe = new Set([first,...neighbors(first)]);
+  const candidates = mineCells.map((_,index) => index).filter(index => !safe.has(index));
+  for (let i = 0; i < mineTotal; i++) {
+    const selected = i + Math.floor(Math.random() * (candidates.length - i));
+    [candidates[i],candidates[selected]] = [candidates[selected],candidates[i]];
+    mineCells[candidates[i]].mine = true;
+  }
+  mineCells.forEach((cell,index) => { cell.count = neighbors(index).filter(near => mineCells[near].mine).length; });
+  mineState = "playing";
+  mineStarted = Date.now();
+  mineTimer = setInterval(() => {
+    mineSeconds = Math.floor((Date.now() - mineStarted) / 1000);
+    if (activeGame === "mine") updateStats();
+  }, 250);
+  byId("mine-status").textContent = "Игра идёт";
+}
+function finishMines(won) {
+  clearInterval(mineTimer);
+  mineSeconds = Math.floor((Date.now() - mineStarted) / 1000);
+  mineState = won ? "won" : "lost";
+  if (won) {
+    mineCells.forEach(cell => { cell.flag = cell.mine; });
+    flags = mineTotal;
+  }
+  mineCells.forEach((_,index) => paintMineCell(index));
+  byId("mine-status").textContent = won ? "Победа! Все безопасные клетки открыты." : "Мина! Начни новую игру ↻";
+  updateStats();
+}
+function revealMineCell(index) {
+  const first = mineCells[index];
+  if (first.flag) return;
+  if (mineState === "ready") startMines(index);
+  if (first.open) {
+    const adjacent = neighbors(index);
+    if (first.count && adjacent.filter(near => mineCells[near].flag).length === first.count) {
+      for (const near of adjacent) {
+        if (mineState !== "playing") break;
+        if (!mineCells[near].open && !mineCells[near].flag) revealMineCell(near);
+      }
+    }
+    return;
+  }
+  if (first.mine) { finishMines(false); return; }
+  const queue = [index];
+  while (queue.length) {
+    const current = queue.pop();
+    const cell = mineCells[current];
+    if (cell.open || cell.flag || cell.mine) continue;
+    cell.open = true;
+    opened++;
+    paintMineCell(current);
+    if (!cell.count) queue.push(...neighbors(current));
+  }
+  if (opened === mineCells.length - mineTotal) finishMines(true);
+}
+function actOnMine(index, flag) {
+  if (mineState === "lost" || mineState === "won") return;
+  if (!flag) { revealMineCell(index); return; }
+  const cell = mineCells[index];
+  if (cell.open) return;
+  cell.flag = !cell.flag;
+  flags += cell.flag ? 1 : -1;
+  paintMineCell(index);
+  updateStats();
+}
+board.addEventListener("click", event => {
+  const cell = event.target.closest(".cell");
+  if (cell) actOnMine(Number(cell.dataset.index), flagMode);
+});
+board.addEventListener("contextmenu", event => {
+  const cell = event.target.closest(".cell");
+  if (!cell) return;
+  event.preventDefault();
+  actOnMine(Number(cell.dataset.index), true);
+});
+board.addEventListener("keydown", event => {
+  const cell = event.target.closest(".cell");
+  if (!cell) return;
+  const index = Number(cell.dataset.index);
+  if (event.code === "KeyF") {
+    event.preventDefault();
+    if (!event.repeat) actOnMine(index,true);
+  }
+  const move = directions[keyDirections[event.key]];
+  if (!move) return;
+  event.preventDefault();
+  const x = index % mineSize + move[0];
+  const y = Math.floor(index / mineSize) + move[1];
+  if (x >= 0 && x < mineSize && y >= 0 && y < mineSize) mineButtons[y * mineSize + x].focus();
+});
+byId("flag-mode").addEventListener("click", event => {
+  flagMode = !flagMode;
+  event.currentTarget.setAttribute("aria-pressed",String(flagMode));
+});
+const sudokuBoard = byId("sudoku-board");
+const sudokuPositions = Array.from({length:81}, (_,index) => {
+  const row = Math.floor(index / 9);
+  const col = index % 9;
+  return {row,col,box:Math.floor(row / 3) * 3 + Math.floor(col / 3)};
+});
+let sudokuSolution, sudokuPuzzle, sudokuValues, sudokuSelection, sudokuWon;
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i],copy[j]] = [copy[j],copy[i]];
+  }
+  return copy;
+}
+function hasUniqueSudoku(puzzle) {
+  const rowMasks = Array(9).fill(0);
+  const colMasks = Array(9).fill(0);
+  const boxMasks = Array(9).fill(0);
+  puzzle.forEach((value,index) => {
+    if (!value) return;
+    const {row,col,box} = sudokuPositions[index];
+    const bit = 1 << (value - 1);
+    rowMasks[row] |= bit;
+    colMasks[col] |= bit;
+    boxMasks[box] |= bit;
+  });
+  function countSolutions(limit) {
+    let target = -1;
+    let choices = 0;
+    let fewest = 10;
+    for (let i = 0; i < puzzle.length; i++) {
+      if (puzzle[i]) continue;
+      const {row,col,box} = sudokuPositions[i];
+      const available = 511 & ~(rowMasks[row] | colMasks[col] | boxMasks[box]);
+      if (!available) return 0;
+      let count = 0;
+      for (let bits = available; bits; bits &= bits - 1) count++;
+      if (count >= fewest) continue;
+      target = i;
+      choices = available;
+      fewest = count;
+      if (count === 1) break;
+    }
+    if (target < 0) return 1;
+    const {row,col,box} = sudokuPositions[target];
+    let found = 0;
+    while (choices && found < limit) {
+      const bit = choices & -choices;
+      choices ^= bit;
+      puzzle[target] = 32 - Math.clz32(bit);
+      rowMasks[row] |= bit;
+      colMasks[col] |= bit;
+      boxMasks[box] |= bit;
+      found += countSolutions(limit - found);
+      puzzle[target] = 0;
+      rowMasks[row] ^= bit;
+      colMasks[col] ^= bit;
+      boxMasks[box] ^= bit;
+    }
+    return found;
+  }
+  return countSolutions(2) === 1;
+}
+function resetSudoku() {
+  const digits = shuffled([1,2,3,4,5,6,7,8,9]);
+  const order = () => shuffled([0,1,2]).flatMap(group => shuffled([0,1,2]).map(offset => group * 3 + offset));
+  const rowOrder = order();
+  const colOrder = order();
+  sudokuSolution = rowOrder.flatMap(row => colOrder.map(col => digits[(row * 3 + Math.floor(row / 3) + col) % 9]));
+  sudokuPuzzle = [...sudokuSolution];
+  let removed = 0;
+  for (const index of shuffled(sudokuPuzzle.keys())) {
+    sudokuPuzzle[index] = 0;
+    if (hasUniqueSudoku(sudokuPuzzle)) removed++;
+    else sudokuPuzzle[index] = sudokuSolution[index];
+    if (removed === 45) break;
+  }
+  sudokuValues = [...sudokuPuzzle];
+  sudokuSelection = sudokuPuzzle.indexOf(0);
+  sudokuWon = false;
+  renderSudoku();
+}
+function sameSudokuGroup(a,b) {
+  return a.row === b.row || a.col === b.col || a.box === b.box;
+}
+function renderSudoku() {
+  const selected = sudokuPositions[sudokuSelection];
+  const selectedValue = sudokuValues[sudokuSelection];
+  const conflicts = sudokuValues.map((value,index) => Boolean(value && sudokuValues.some((other,near) =>
+    near !== index && value === other && sameSudokuGroup(sudokuPositions[index],sudokuPositions[near]))));
+  sudokuButtons.forEach((button,index) => {
+    const position = sudokuPositions[index];
+    const value = sudokuValues[index];
+    button.textContent = value || "";
+    button.tabIndex = index === sudokuSelection ? 0 : -1;
+    button.classList.toggle("given",Boolean(sudokuPuzzle[index]));
+    button.classList.toggle("related",sameSudokuGroup(position,selected));
+    button.classList.toggle("matching",Boolean(value && value === selectedValue));
+    button.classList.toggle("selected",index === sudokuSelection);
+    button.classList.toggle("conflict",conflicts[index]);
+    const note = sudokuPuzzle[index] ? ", задано" : conflicts[index] ? ", повтор" : "";
+    button.setAttribute("aria-label","Строка " + (position.row + 1) + ", столбец " + (position.col + 1) + ", " + (value || "пусто") + note);
+  });
+  byId("sudoku-status").textContent = sudokuWon ? "Победа! Судоку решено." :
+    conflicts.some(Boolean) ? "Есть повторяющиеся цифры" : "Выбери клетку и введи цифру";
+  if (activeGame === "sudoku") updateStats();
+}
+function enterSudokuDigit(value) {
+  if (sudokuWon || sudokuPuzzle[sudokuSelection]) return;
+  sudokuValues[sudokuSelection] = value;
+  sudokuWon = sudokuValues.every((digit,index) => digit === sudokuSolution[index]);
+  renderSudoku();
+}
+function selectSudokuCell(index) {
+  sudokuSelection = index;
+  renderSudoku();
+  sudokuButtons[index].focus({preventScroll:true});
+}
+const sudokuButtons = sudokuPositions.map((_,index) => {
+  const button = document.createElement("button");
+  button.className = "sudoku-cell";
+  button.type = "button";
+  button.addEventListener("click", () => selectSudokuCell(index));
+  return button;
+});
+sudokuBoard.replaceChildren(...sudokuButtons);
+sudokuBoard.addEventListener("keydown", event => {
+  const move = directions[keyDirections[event.key]];
+  if (!move) return;
+  event.preventDefault();
+  const {row,col} = sudokuPositions[sudokuSelection];
+  const nextRow = row + move[1];
+  const nextCol = col + move[0];
+  if (nextRow >= 0 && nextRow < 9 && nextCol >= 0 && nextCol < 9) selectSudokuCell(nextRow * 9 + nextCol);
+});
+const sudokuKeys = byId("sudoku-keys");
+for (const value of [1,2,3,4,5,6,7,8,9,0]) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary";
+  button.textContent = value || "⌫";
+  if (!value) button.setAttribute("aria-label","Стереть цифру");
+  button.addEventListener("click", () => enterSudokuDigit(value));
+  sudokuKeys.append(button);
+}
+
+const mergeBoard = byId("merge-board");
+const mergeCells = Array.from({length:16}, () => {
+  const cell = document.createElement("div");
+  cell.className = "merge-cell";
+  return cell;
+});
+mergeBoard.replaceChildren(...mergeCells);
+let mergeValues, mergeScore, mergeBest = 0, mergeWon, mergeOver, newTile;
+try { mergeBest = Number(localStorage.getItem("pixel-club-2048-best")) || 0; } catch {}
+function addMergeTile() {
+  const empty = mergeValues.flatMap((value,index) => value ? [] : [index]);
+  if (!empty.length) return;
+  newTile = empty[Math.floor(Math.random() * empty.length)];
+  mergeValues[newTile] = Math.random() < .9 ? 2 : 4;
+}
+function renderMerge() {
+  mergeCells.forEach((cell,index) => {
+    const value = mergeValues[index];
+    cell.textContent = value || "";
+    cell.dataset.value = value;
+    cell.classList.toggle("high",value >= 128);
+    cell.classList.toggle("new",index === newTile);
+  });
+  byId("merge-status").textContent = mergeOver ? "Ходов больше нет. Начни новую игру ↻" :
+    mergeWon ? "2048 собрано! Можно продолжать." : "Соединяй одинаковые плитки";
+  if (activeGame === "merge") updateStats();
+}
+function resetMerge() {
+  mergeValues = Array(16).fill(0);
+  mergeScore = 0;
+  mergeWon = mergeOver = false;
+  addMergeTile();
+  addMergeTile();
+  renderMerge();
+}
+function hasMergeMoves() {
+  return mergeValues.some((value,index) => !value ||
+    (index % 4 < 3 && value === mergeValues[index + 1]) ||
+    (index < 12 && value === mergeValues[index + 4]));
+}
+function moveMerge(direction) {
+  if (mergeOver) return;
+  let changed = false;
+  let gained = 0;
+  const horizontal = direction === "left" || direction === "right";
+  const reversed = direction === "right" || direction === "down";
+  for (let lane = 0; lane < 4; lane++) {
+    const positions = Array.from({length:4}, (_,step) => {
+      const offset = reversed ? 3 - step : step;
+      return horizontal ? lane * 4 + offset : offset * 4 + lane;
+    });
+    const values = positions.map(index => mergeValues[index]).filter(Boolean);
+    const merged = [];
+    for (let i = 0; i < values.length; i++) {
+      let value = values[i];
+      if (value === values[i + 1]) {
+        value *= 2;
+        gained += value;
+        i++;
+      }
+      merged.push(value);
+    }
+    positions.forEach((index,step) => {
+      const value = merged[step] || 0;
+      if (mergeValues[index] !== value) changed = true;
+      mergeValues[index] = value;
+    });
+  }
+  if (!changed) return;
+  mergeScore += gained;
+  if (mergeScore > mergeBest) {
+    mergeBest = mergeScore;
+    try { localStorage.setItem("pixel-club-2048-best",String(mergeBest)); } catch {}
+  }
+  if (mergeValues.includes(2048)) mergeWon = true;
+  addMergeTile();
+  mergeOver = !hasMergeMoves();
+  renderMerge();
+}
+listenForSwipes(byId("merge-arena"), moveMerge);
+document.querySelectorAll("[data-merge-direction]").forEach(button => {
+  button.addEventListener("click", () => moveMerge(button.dataset.mergeDirection));
+});
+
+const games = {
+  snake: {name:"Змейка", reset:resetSnake},
+  mine: {name:"Сапёр", reset:resetMines},
+  sudoku: {name:"Судоку", reset:resetSudoku},
+  merge: {name:"2048", reset:resetMerge}
+};
+byId("difficulty").addEventListener("change", resetMines);
+byId("reset").addEventListener("click", () => games[activeGame].reset());
+document.querySelectorAll(".choice").forEach(button => {
+  button.addEventListener("click", () => {
+    const game = button.dataset.game;
+    if (activeGame === game) return;
+    if (snakeState === "playing") setSnakeState("paused");
+    activeGame = game;
+    document.body.dataset.game = game;
+    document.querySelectorAll(".choice").forEach(choice => choice.setAttribute("aria-pressed",String(choice === button)));
+    for (const id of Object.keys(games)) {
+      byId(id + "-panel").hidden = id !== game;
+      byId(id + "-help").hidden = id !== game;
+    }
+    byId("pause-button").hidden = game !== "snake";
+    byId("difficulty").hidden = game !== "mine";
+    byId("game-icon").setAttribute("href", "#" + game);
+    byId("game-name").textContent = games[game].name;
+    updateStats();
+  });
+});
+document.addEventListener("keydown", event => {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest("select,input,textarea")) return;
+  if (activeGame === "sudoku") {
+    if (/^[1-9]$/.test(event.key) || ["Backspace","Delete","0"].includes(event.key)) {
+      event.preventDefault();
+      enterSudokuDigit(/^[1-9]$/.test(event.key) ? Number(event.key) : 0);
+    }
+    return;
+  }
+  if (activeGame === "mine") return;
+  const next = keyDirections[event.code];
+  if (next) {
+    event.preventDefault();
+    if (activeGame === "snake") steer(next);
+    else moveMerge(next);
+  } else if (activeGame === "snake" && event.code === "Space" && !event.target.closest("button")) {
+    event.preventDefault();
+    if (!event.repeat) toggleSnake();
+  }
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && snakeState === "playing") setSnakeState("paused");
+});
+resetSnake();
+resetMines();
+resetSudoku();
+resetMerge();
+</script>
+</body>
+</html>
