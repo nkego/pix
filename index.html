@@ -49,6 +49,26 @@ body[data-game="merge"]{--accent:var(--amber)}
 .merge-cell.new{box-shadow:inset 0 0 0 2px #fff7e487}
 @media(max-width:880px){.choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:no-preference){.merge-cell.new{animation:tile-in .15s ease-out}@keyframes tile-in{from{transform:scale(.87);opacity:.6}to{transform:scale(1);opacity:1}}}
+.layout.is-fullscreen{--play-room:max(136px,calc(100dvh - 150px));width:100%;height:100%;margin:0;overflow:auto;background:var(--bg);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));grid-template-columns:minmax(0,1200px) minmax(170px,230px);justify-content:center;align-content:safe center}
+.layout.is-expanded{position:fixed;inset:0;z-index:10}
+body.game-expanded{overflow:hidden}
+.is-fullscreen aside{display:block}
+.is-fullscreen aside .side-card+ .side-card{display:none}
+.is-fullscreen .arena{margin-inline:auto}
+.is-fullscreen .snake-arena{width:min(100%,calc(var(--play-room) * 20 / 12));aspect-ratio:20/12}
+.is-fullscreen .puzzle-arena,.is-fullscreen .mine-arena{width:min(100%,var(--play-room),690px);padding:8px;min-height:0}
+.is-fullscreen .puzzle-arena{width:min(100%,max(136px,calc(var(--play-room) - 48px)),690px)}
+.is-fullscreen .sudoku-grid,.is-fullscreen .merge-grid,.is-fullscreen .mine-grid{width:100%}
+.is-fullscreen .sudoku-cell{font-size:clamp(13px,4vmin,29px)}
+@media(pointer:coarse),(max-width:740px){.is-fullscreen .snake-arena{width:min(100%,calc(max(136px,var(--play-room) - 53px) * 20 / 12))}}
+@media(max-width:740px){
+  .layout.is-fullscreen{--play-room:max(136px,calc(100dvh - 211px));grid-template-columns:minmax(0,1fr);gap:8px}
+  .is-fullscreen aside{grid-row:1}
+  .is-fullscreen aside .side-card{padding:0;border:0;background:transparent}
+  .is-fullscreen aside h2{display:none}
+  .is-fullscreen .stat{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px}
+  .is-fullscreen .stat strong{font-size:20px}
+}
 </style>
 </head>
 <body data-game="snake">
@@ -65,6 +85,8 @@ body[data-game="merge"]{--accent:var(--amber)}
 
 <symbol id="sudoku" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></symbol>
 <symbol id="merge" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/><path d="M15 5h5v5m-7 1 7-6M9 19H4v-5m7-1-7 6"/></symbol>
+<symbol id="expand-glyph" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+<symbol id="shrink-glyph" viewBox="0 0 24 24"><path d="M4 9h5V4m11 5h-5V4M9 20v-5H4m11 5v-5h5"/></symbol>
 </svg>
 <header class="top"><div class="wrap"><div class="brand"><span class="brand-icon"><svg aria-hidden="true"><use href="#arc"/></svg></span>Пиксельный клуб</div><div class="status">Аркада</div></div></header>
 <main class="wrap">
@@ -75,12 +97,13 @@ body[data-game="merge"]{--accent:var(--amber)}
     <button class="choice sudoku" data-game="sudoku" aria-pressed="false"><span class="tile-icon"><svg aria-hidden="true"><use href="#sudoku"/></svg></span><span><strong>Судоку</strong><small>Заполняй клетки цифрами</small></span><span class="mono index">03</span></button>
     <button class="choice merge" data-game="merge" aria-pressed="false"><span class="tile-icon"><svg aria-hidden="true"><use href="#merge"/></svg></span><span><strong>2048</strong><small>Соединяй одинаковые плитки</small></span><span class="mono index">04</span></button>
   </div>
-  <div class="layout">
+  <div class="layout" id="game-view">
     <section class="game" aria-label="Игровое поле">
       <div class="game-head"><div class="game-name"><svg aria-hidden="true"><use id="game-icon" href="#snake"/></svg><span id="game-name">Змейка</span></div><div class="actions">
         <select id="difficulty" aria-label="Сложность Сапёра" hidden><option value="easy">Лёгкий</option><option value="medium">Средний</option><option value="hard">Сложный</option></select>
         <button id="pause-button" class="icon-btn" type="button" aria-label="Пауза" title="Пауза"><svg aria-hidden="true"><use id="pause-icon" href="#pause"/></svg></button>
         <button id="reset" class="icon-btn" type="button" aria-label="Новая игра" title="Новая игра"><svg aria-hidden="true"><use href="#reset-glyph"/></svg></button>
+        <button id="fullscreen-button" class="icon-btn" type="button" aria-label="На весь экран" title="На весь экран"><svg aria-hidden="true"><use id="fullscreen-icon" href="#expand-glyph"/></svg></button>
       </div></div>
       <div id="snake-panel">
         <div class="arena snake-arena">
@@ -675,6 +698,55 @@ const games = {
 };
 byId("difficulty").addEventListener("change", resetMines);
 byId("reset").addEventListener("click", () => games[activeGame].reset());
+
+const gameView = byId("game-view");
+const fullscreenButton = byId("fullscreen-button");
+const outsideGameView = document.querySelectorAll(".top, .intro, .choices, .footer");
+let expandedView = false;
+let fullscreenPending = false;
+function updateFullscreenView() {
+  const fullscreen = expandedView || document.fullscreenElement === gameView;
+  gameView.classList.toggle("is-fullscreen", fullscreen);
+  gameView.classList.toggle("is-expanded", expandedView);
+  document.body.classList.toggle("game-expanded", expandedView);
+  outsideGameView.forEach(element => { element.inert = fullscreen; });
+  const label = fullscreen ? "Выйти из полноэкранного режима" : "На весь экран";
+  fullscreenButton.setAttribute("aria-label", label);
+  fullscreenButton.title = label;
+  byId("fullscreen-icon").setAttribute("href", fullscreen ? "#shrink-glyph" : "#expand-glyph");
+}
+async function toggleFullscreenView() {
+  if (fullscreenPending) return;
+  if (expandedView) {
+    expandedView = false;
+    updateFullscreenView();
+    return;
+  }
+  fullscreenPending = true;
+  try {
+    if (document.fullscreenElement === gameView) {
+      await document.exitFullscreen().catch(() => {});
+    } else if (document.fullscreenEnabled && gameView.requestFullscreen) {
+      try {
+        await gameView.requestFullscreen();
+      } catch {
+        expandedView = true;
+      }
+    } else {
+      expandedView = true;
+    }
+  } finally {
+    fullscreenPending = false;
+    updateFullscreenView();
+  }
+}
+fullscreenButton.addEventListener("click", toggleFullscreenView);
+document.addEventListener("fullscreenchange", updateFullscreenView);
+document.addEventListener("keydown", event => {
+  if (event.key !== "Escape" || (!expandedView && document.fullscreenElement !== gameView)) return;
+  event.preventDefault();
+  toggleFullscreenView();
+});
 document.querySelectorAll(".choice").forEach(button => {
   button.addEventListener("click", () => {
     const game = button.dataset.game;
