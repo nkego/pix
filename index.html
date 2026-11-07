@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101112">
 <title>Пиксельный клуб — Змейка, Сапёр, Судоку и 2048</title>
 <meta name="description" content="Четыре игры в браузере: Змейка, Сапёр, Судоку и 2048. Играй на компьютере и телефоне.">
@@ -49,8 +49,19 @@ body[data-game="merge"]{--accent:var(--amber)}
 .merge-cell.new{box-shadow:inset 0 0 0 2px #fff7e487}
 @media(max-width:880px){.choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:no-preference){.merge-cell.new{animation:tile-in .15s ease-out}@keyframes tile-in{from{transform:scale(.87);opacity:.6}to{transform:scale(1);opacity:1}}}
-.layout.is-fullscreen{--play-room:max(136px,calc(100dvh - 150px));width:100%;height:100%;margin:0;overflow:auto;background:var(--bg);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));grid-template-columns:minmax(0,1200px) minmax(170px,230px);justify-content:center;align-content:safe center}
-.layout.is-expanded{position:fixed;inset:0;z-index:10}
+:root{
+  --browser-height:100vh;
+  --app-height:var(--browser-height);
+  --edge-top:max(env(safe-area-inset-top,0px),calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)));
+  --edge-right:max(env(safe-area-inset-right,0px),calc(var(--tg-safe-area-inset-right,0px) + var(--tg-content-safe-area-inset-right,0px)));
+  --edge-bottom:max(env(safe-area-inset-bottom,0px),calc(var(--tg-safe-area-inset-bottom,0px) + var(--tg-content-safe-area-inset-bottom,0px)));
+  --edge-left:max(env(safe-area-inset-left,0px),calc(var(--tg-safe-area-inset-left,0px) + var(--tg-content-safe-area-inset-left,0px)));
+}
+@supports(height:100dvh){:root{--browser-height:100dvh}}
+.telegram-mini-app{--app-height:var(--tg-viewport-stable-height,var(--browser-height));overscroll-behavior:none}
+body{min-height:var(--app-height);padding:var(--edge-top) var(--edge-right) var(--edge-bottom) var(--edge-left)}
+.layout.is-fullscreen{--board-reserve:150px;--pad-top:max(10px,var(--edge-top));--pad-bottom:max(10px,var(--edge-bottom));--play-room:max(136px,calc(var(--app-height) - var(--pad-top) - var(--pad-bottom) - var(--board-reserve)));width:100%;height:100%;margin:0;overflow:auto;background:var(--bg);padding:var(--pad-top) max(10px,var(--edge-right)) var(--pad-bottom) max(10px,var(--edge-left));grid-template-columns:minmax(0,1200px) minmax(150px,230px);justify-content:center;align-content:safe center}
+.layout.is-expanded{position:fixed;inset:0 0 auto;height:var(--app-height);z-index:10}
 body.game-expanded{overflow:hidden}
 html:has(body.game-expanded),.layout.is-expanded{overscroll-behavior:none}
 @media(any-pointer:coarse){html{overscroll-behavior-x:none}}
@@ -63,14 +74,36 @@ html:has(body.game-expanded),.layout.is-expanded{overscroll-behavior:none}
 .is-fullscreen .puzzle-arena{width:min(100%,max(136px,calc(var(--play-room) - 48px)),690px)}
 .is-fullscreen .sudoku-grid,.is-fullscreen .merge-grid,.is-fullscreen .mine-grid{width:100%}
 .is-fullscreen .sudoku-cell{font-size:clamp(13px,4vmin,29px)}
-@media(pointer:coarse),(max-width:740px){.is-fullscreen .snake-arena{width:min(100%,calc(max(136px,var(--play-room) - 53px) * 20 / 12))}}
+@media(any-pointer:coarse),(max-width:740px){.is-fullscreen .snake-arena{width:min(100%,calc(max(136px,var(--play-room) - 53px) * 20 / 12))}}
 @media(max-width:740px){
-  .layout.is-fullscreen{--play-room:max(136px,calc(100dvh - 211px));grid-template-columns:minmax(0,1fr);gap:8px}
-  .is-fullscreen aside{grid-row:1}
-  .is-fullscreen aside .side-card{padding:0;border:0;background:transparent}
-  .is-fullscreen aside h2{display:none}
-  .is-fullscreen .stat{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px}
-  .is-fullscreen .stat strong{font-size:20px}
+  .layout.is-fullscreen{--board-reserve:190px;grid-template-columns:minmax(0,1fr);gap:8px}
+  .layout:not(.is-fullscreen) aside{display:contents}
+  .layout:not(.is-fullscreen) aside .side-card:first-child,.is-fullscreen aside{grid-row:1}
+  .layout aside .side-card:first-child{padding:0;border:0;background:transparent}
+  .layout aside .side-card:first-child h2{display:none}
+  .layout .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .layout .stat{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px}
+  .layout .stat span{min-width:0;overflow-wrap:anywhere}
+  .layout .stat strong{font-size:20px}
+  .telegram-mini-app .top{display:none}
+  .telegram-mini-app main.wrap{padding-top:12px}
+  .telegram-mini-app h1{font-size:clamp(30px,8vw,46px);margin:4px 0 6px}
+  .telegram-mini-app .intro p{display:none}
+  .telegram-mini-app .choices{margin:10px 0;gap:7px}
+}
+@media(max-width:420px) and (orientation:portrait){
+  .sudoku-keys{grid-template-columns:repeat(5,minmax(0,1fr))}
+  body[data-game="sudoku"] .is-fullscreen .puzzle-arena{width:min(100%,max(136px,calc(var(--play-room) - 102px)))}
+}
+@media(any-pointer:coarse){
+  .dpad{display:flex}
+  .game-head .icon-btn,.dpad .icon-btn{width:44px;height:44px}
+  .game-head select,.sudoku-keys button{min-height:44px}
+}
+@media(orientation:landscape) and (max-height:520px) and (min-width:600px){
+  .layout.is-fullscreen{--board-reserve:124px;grid-template-columns:minmax(0,1fr) 150px}
+  .is-fullscreen aside{grid-row:auto}
+  .layout.is-fullscreen .stats{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -730,6 +763,18 @@ const fullscreenButton = byId("fullscreen-button");
 const outsideGameView = document.querySelectorAll(".top, .intro, .choices, .footer");
 let expandedView = false;
 let fullscreenPending = false;
+let telegramApp;
+function syncTelegramControls() {
+  if (!telegramApp) return;
+  if (telegramApp.isVersionAtLeast("7.7")) {
+    if (expandedView || activeGame === "snake" || activeGame === "merge") telegramApp.disableVerticalSwipes();
+    else telegramApp.enableVerticalSwipes();
+  }
+  if (telegramApp.isVersionAtLeast("6.1")) {
+    if (expandedView) telegramApp.BackButton.show();
+    else telegramApp.BackButton.hide();
+  }
+}
 function updateFullscreenView() {
   const fullscreen = expandedView || document.fullscreenElement === gameView;
   gameView.classList.toggle("is-fullscreen", fullscreen);
@@ -740,6 +785,7 @@ function updateFullscreenView() {
   fullscreenButton.setAttribute("aria-label", label);
   fullscreenButton.title = label;
   byId("fullscreen-icon").setAttribute("href", fullscreen ? "#shrink-glyph" : "#expand-glyph");
+  syncTelegramControls();
 }
 async function toggleFullscreenView(event) {
   if (fullscreenPending) return;
@@ -753,7 +799,7 @@ async function toggleFullscreenView(event) {
   try {
     if (document.fullscreenElement === gameView) {
       await document.exitFullscreen().catch(() => {});
-    } else if (!touchDevice && document.fullscreenEnabled && gameView.requestFullscreen) {
+    } else if (!telegramApp && !touchDevice && document.fullscreenEnabled && gameView.requestFullscreen) {
       try {
         await gameView.requestFullscreen();
       } catch {
@@ -791,6 +837,7 @@ document.querySelectorAll(".choice").forEach(button => {
     byId("game-icon").setAttribute("href", "#" + game);
     byId("game-name").textContent = games[game].name;
     updateStats();
+    syncTelegramControls();
   });
 });
 document.addEventListener("keydown", event => {
@@ -813,13 +860,55 @@ document.addEventListener("keydown", event => {
     if (!event.repeat) toggleSnake();
   }
 });
+function pauseSnakeIfPlaying() {
+  if (snakeState === "playing") setSnakeState("paused");
+}
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden && snakeState === "playing") setSnakeState("paused");
+  if (document.hidden) pauseSnakeIfPlaying();
 });
+function connectTelegram() {
+  const app = window.Telegram?.WebApp;
+  if (!app) return;
+  telegramApp = app;
+  document.documentElement.classList.add("telegram-mini-app");
+  if (app.isVersionAtLeast("6.1")) {
+    app.setBackgroundColor("#101112");
+    app.BackButton.onClick(() => {
+      if (expandedView) toggleFullscreenView();
+    });
+  }
+  if (app.isVersionAtLeast("7.0")) app.setHeaderColor("#101112");
+  if (app.isVersionAtLeast("7.10")) app.setBottomBarColor("#101112");
+  if (app.isVersionAtLeast("8.0")) app.onEvent("deactivated", pauseSnakeIfPlaying);
+  app.expand();
+  syncTelegramControls();
+  app.ready();
+}
+function loadTelegram() {
+  if (location.protocol !== "https:") return;
+  const launchParams = [new URLSearchParams(location.search), new URLSearchParams(location.hash.slice(1))];
+  const hasLaunchParams = launchParams.some(params => params.has("tgWebAppPlatform") || params.has("tgWebAppData"));
+  let launched = hasLaunchParams || Boolean(window.TelegramWebviewProxy);
+  try {
+    if (launched) sessionStorage.setItem("pixel-club-telegram", "1");
+    else launched = sessionStorage.getItem("pixel-club-telegram") === "1";
+  } catch {}
+  if (!launched) return;
+  if (window.Telegram?.WebApp) {
+    connectTelegram();
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = "https://telegram.org/js/telegram-web-app.js?64";
+  script.referrerPolicy = "no-referrer";
+  script.addEventListener("load", connectTelegram, {once:true});
+  document.head.append(script);
+}
 resetSnake();
 resetMines();
 resetSudoku();
 resetMerge();
+loadTelegram();
 </script>
 </body>
 </html>
