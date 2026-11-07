@@ -52,6 +52,9 @@ body[data-game="merge"]{--accent:var(--amber)}
 .layout.is-fullscreen{--play-room:max(136px,calc(100dvh - 150px));width:100%;height:100%;margin:0;overflow:auto;background:var(--bg);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));grid-template-columns:minmax(0,1200px) minmax(170px,230px);justify-content:center;align-content:safe center}
 .layout.is-expanded{position:fixed;inset:0;z-index:10}
 body.game-expanded{overflow:hidden}
+html:has(body.game-expanded),.layout.is-expanded{overscroll-behavior:none}
+@media(any-pointer:coarse){html{overscroll-behavior-x:none}}
+.mine-gesture-hint{text-align:right}
 .is-fullscreen aside{display:block}
 .is-fullscreen aside .side-card+ .side-card{display:none}
 .is-fullscreen .arena{margin-inline:auto}
@@ -115,7 +118,7 @@ body.game-expanded{overflow:hidden}
       </div>
       <div id="mine-panel" hidden>
         <div class="arena mine-arena"><div class="mine-grid" id="mine-board" aria-label="Поле Сапёра"></div></div>
-        <div class="mine-bar"><span id="mine-status" role="status">Открой любую клетку</span><button class="secondary" id="flag-mode" aria-pressed="false"><svg aria-hidden="true" style="width:13px;height:13px"><use href="#flag"/></svg> Флажок</button></div>
+        <div class="mine-bar"><span id="mine-status" role="status">Открой любую клетку</span><span class="mine-gesture-hint">Два нажатия — флажок</span></div>
       </div>
       <div id="sudoku-panel" hidden>
         <div class="arena puzzle-arena"><div class="sudoku-grid" id="sudoku-board" role="group" aria-label="Поле Судоку, 9 на 9"></div></div>
@@ -132,7 +135,7 @@ body.game-expanded{overflow:hidden}
       <section class="side-card"><h2><svg aria-hidden="true"><use href="#chart"/></svg> Статистика</h2><div class="stats"><div class="stat"><span id="stat-label-a">Счёт</span><strong id="stat-a">00</strong></div><div class="stat"><span id="stat-label-b">Рекорд</span><strong id="stat-b">00</strong></div></div></section>
       <section class="side-card"><h2><svg aria-hidden="true"><use href="#keys"/></svg> Управление</h2>
         <div id="snake-help"><div class="rule"><span>Движение</span><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div><div class="rule"><span>Пауза / старт</span><span class="keys"><kbd>Пробел</kbd></span></div><p class="tip">На телефоне используй свайпы или кнопки под полем.</p></div>
-        <div id="mine-help" hidden><div class="rule"><span>Открыть клетку</span><span class="keys"><kbd>Клик</kbd></span></div><div class="rule"><span>Поставить флажок</span><span class="keys"><kbd>Правый клик</kbd><kbd>F</kbd></span></div><p class="tip">Число показывает, сколько мин рядом. На телефоне включи режим «Флажок».</p></div>
+        <div id="mine-help" hidden><div class="rule"><span>Открыть клетку</span><span class="keys"><kbd>Одно нажатие</kbd></span></div><div class="rule"><span>Поставить или снять флажок</span><span class="keys"><kbd>Два нажатия</kbd><kbd>F</kbd></span></div><p class="tip">Число показывает, сколько мин рядом. Правый клик тоже ставит или снимает флажок.</p></div>
         <div id="sudoku-help" hidden><div class="rule"><span>Ввести цифру</span><span class="keys"><kbd>1–9</kbd></span></div><div class="rule"><span>Стереть цифру</span><span class="keys"><kbd>⌫</kbd></span></div><p class="tip">В каждой строке, столбце и квадрате 3 × 3 цифры от 1 до 9 встречаются по одному разу. На телефоне используй кнопки под полем.</p></div>
         <div id="merge-help" hidden><div class="rule"><span>Сдвинуть плитки</span><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div><p class="tip">Две одинаковые плитки сливаются в одну. Собери 2048. На телефоне используй свайпы или кнопки под полем.</p></div>
       </section>
@@ -294,6 +297,9 @@ function listenForSwipes(arena, onSwipe) {
     touch = {id:event.pointerId,x:event.clientX,y:event.clientY};
     arena.setPointerCapture(event.pointerId);
   });
+  arena.addEventListener("touchmove", event => {
+    if (touch && event.cancelable) event.preventDefault();
+  }, {passive:false});
   arena.addEventListener("pointerup", event => {
     if (touch?.id !== event.pointerId) return;
     const dx = event.clientX - touch.x;
@@ -319,7 +325,9 @@ const board = byId("mine-board");
 const mineIcon = '<svg aria-hidden="true"><use href="#mine"/></svg>';
 const flagIcon = '<svg aria-hidden="true"><use href="#flag"/></svg>';
 const numberColors = ["","#9ab8ff","#b6ef90","#ff9f96","#c4a6ff","#ffca86","#85e3d8","#ffc3ed","#dfdce5"];
-let mineSize, mineTotal, mineCells, mineButtons, mineState, flags, opened, mineSeconds, mineTimer, mineStarted, flagMode;
+const mineClickDelay = 350;
+const pendingMineClicks = new Map();
+let mineSize, mineTotal, mineCells, mineButtons, mineState, flags, opened, mineSeconds, mineTimer, mineStarted;
 function neighbors(index) {
   const x = index % mineSize;
   const y = Math.floor(index / mineSize);
@@ -335,11 +343,11 @@ function neighbors(index) {
 }
 function resetMines() {
   clearInterval(mineTimer);
+  pendingMineClicks.forEach(timer => clearTimeout(timer));
+  pendingMineClicks.clear();
   [mineSize,mineTotal] = levels[byId("difficulty").value];
   mineState = "ready";
   flags = opened = mineSeconds = 0;
-  flagMode = false;
-  byId("flag-mode").setAttribute("aria-pressed","false");
   byId("mine-status").textContent = "Открой любую клетку";
   board.style.setProperty("--size",mineSize);
   board.style.setProperty("--grid-width", Math.min(480, mineSize * 36) + "px");
@@ -430,15 +438,34 @@ function actOnMine(index, flag) {
   paintMineCell(index);
   updateStats();
 }
+function cancelPendingMineClick(index) {
+  clearTimeout(pendingMineClicks.get(index));
+  return pendingMineClicks.delete(index);
+}
 board.addEventListener("click", event => {
   const cell = event.target.closest(".cell");
-  if (cell) actOnMine(Number(cell.dataset.index), flagMode);
+  if (!cell) return;
+  const index = Number(cell.dataset.index);
+  const secondClick = cancelPendingMineClick(index);
+  if (event.detail === 0) {
+    actOnMine(index, false);
+  } else if (secondClick) {
+    actOnMine(index, true);
+  } else {
+    // Wait for a possible second click before revealing the cell.
+    pendingMineClicks.set(index, setTimeout(() => {
+      pendingMineClicks.delete(index);
+      actOnMine(index, false);
+    }, mineClickDelay));
+  }
 });
 board.addEventListener("contextmenu", event => {
   const cell = event.target.closest(".cell");
   if (!cell) return;
   event.preventDefault();
-  actOnMine(Number(cell.dataset.index), true);
+  const index = Number(cell.dataset.index);
+  cancelPendingMineClick(index);
+  actOnMine(index, true);
 });
 board.addEventListener("keydown", event => {
   const cell = event.target.closest(".cell");
@@ -446,7 +473,10 @@ board.addEventListener("keydown", event => {
   const index = Number(cell.dataset.index);
   if (event.code === "KeyF") {
     event.preventDefault();
-    if (!event.repeat) actOnMine(index,true);
+    if (!event.repeat) {
+      cancelPendingMineClick(index);
+      actOnMine(index,true);
+    }
   }
   const move = directions[keyDirections[event.key]];
   if (!move) return;
@@ -454,10 +484,6 @@ board.addEventListener("keydown", event => {
   const x = index % mineSize + move[0];
   const y = Math.floor(index / mineSize) + move[1];
   if (x >= 0 && x < mineSize && y >= 0 && y < mineSize) mineButtons[y * mineSize + x].focus();
-});
-byId("flag-mode").addEventListener("click", event => {
-  flagMode = !flagMode;
-  event.currentTarget.setAttribute("aria-pressed",String(flagMode));
 });
 const sudokuBoard = byId("sudoku-board");
 const sudokuPositions = Array.from({length:81}, (_,index) => {
@@ -715,7 +741,7 @@ function updateFullscreenView() {
   fullscreenButton.title = label;
   byId("fullscreen-icon").setAttribute("href", fullscreen ? "#shrink-glyph" : "#expand-glyph");
 }
-async function toggleFullscreenView() {
+async function toggleFullscreenView(event) {
   if (fullscreenPending) return;
   if (expandedView) {
     expandedView = false;
@@ -723,10 +749,11 @@ async function toggleFullscreenView() {
     return;
   }
   fullscreenPending = true;
+  const touchDevice = event?.pointerType === "touch" || matchMedia("(pointer: coarse)").matches;
   try {
     if (document.fullscreenElement === gameView) {
       await document.exitFullscreen().catch(() => {});
-    } else if (document.fullscreenEnabled && gameView.requestFullscreen) {
+    } else if (!touchDevice && document.fullscreenEnabled && gameView.requestFullscreen) {
       try {
         await gameView.requestFullscreen();
       } catch {
